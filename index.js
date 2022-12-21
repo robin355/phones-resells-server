@@ -177,19 +177,6 @@ async function run() {
             const product = await AddProductsCollection.deleteOne(query)
             res.send(product)
         })
-
-
-
-
-
-
-
-
-
-
-
-
-
     }
     finally {
 

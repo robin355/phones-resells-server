@@ -80,6 +80,12 @@ async function run() {
             const bookings = await bookingCollections.find(query).toArray()
             res.send(bookings)
         })
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const booking = await bookingCollections.findOne(query);
+            res.send(booking);
+        })
         app.get('/seller', async (req, res) => {
             const email = req.query.email;
             const query = { email: email }
@@ -92,12 +98,7 @@ async function run() {
             const buyer = await ByerUsersCollection.findOne(query)
             res.send(buyer)
         })
-        app.get('/bookings/:id', async (req, res) => {
-            const id = req.params.id;
-            const query = { _id: ObjectId(id) };
-            const booking = await bookingCollections.findOne(query);
-            res.send(booking);
-        })
+
         app.post('/BuyerUsers', async (req, res) => {
             const user = req.body;
             const result = await ByerUsersCollection.insertOne(user)

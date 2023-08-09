@@ -5,6 +5,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
+const stripe=require('stripe')(process.env.Secrate_Key);
 
 app.use(cors())
 app.use(express.json())
@@ -13,22 +14,22 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 async function run() {
     try {
-        function verifyJwt(req, res, next) {
-            const authheader = req.headers.authorization;
-            if (!authheader) {
-                return res.status(401).send({ massage: 'UnAuthorization access' })
-            }
-            const token = authheader.split(' ')[1]
-            jwt.verify(token, process.env.SECRET_TOKEN, function (err, decoded) {
-                if (err) {
-                    return res.status(401).send({ massage: 'unAuthrization' })
-                }
-                req.decoded = decoded;
-                next()
+        // function verifyJwt(req, res, next) {
+        //     const authheader = req.headers.authorization;
+        //     if (!authheader) {
+        //         return res.status(401).send({ massage: 'UnAuthorization access' })
+        //     }
+        //     const token = authheader.split(' ')[1]
+        //     jwt.verify(token, process.env.SECRET_TOKEN, function (err, decoded) {
+        //         if (err) {
+        //             return res.status(401).send({ massage: 'unAuthrization' })
+        //         }
+        //         req.decoded = decoded;
+        //         next()
 
-            })
+        //     })
 
-        }
+        // }
         const PhonesCetagoriCollections = client.db('phones').collection('cetagorie')
         const PhonesCollections = client.db('phones').collection('allphones')
         const bookingCollections = client.db('phones').collection('bookings')
@@ -36,17 +37,21 @@ async function run() {
         const SellerUsersCollection = client.db('phones').collection('Seller')
         const AllUsersCollection = client.db('phones').collection('AllUser')
         const AddProductsCollection = client.db('phones').collection('products')
+        const newProductsCollection = client.db('phones').collection('ArrivalProducts')
+
         app.get('/cetagorie', async (req, res) => {
             const query = {}
             const phones = await PhonesCetagoriCollections.find(query).toArray()
             res.send(phones)
         })
-        app.get('/cetagori/:id', async (req, res) => {
+     
+        app.get('/cetagorie/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const service = await PhonesCetagoriCollections.findOne(query);
             res.send(service)
         })
+
         app.get('/phones', async (req, res) => {
             let query = {}
             if (req.query.categoryName) {
@@ -58,16 +63,47 @@ async function run() {
             const reviews = await cursor.toArray();
             res.send(reviews);
         })
-        app.get('/jwt', async (req, res) => {
-            const email = req.query.email
-            const query = { email: email }
-            const user = await AllUsersCollection.findOne(query)
-            if (user) {
-                const token = jwt.sign({ email }, process.env.SECRET_TOKEN, { expiresIn: '2h' })
-                return res.send({ accessToken: token })
-            }
-            res.status(403).send({ accessToken: '' })
+        app.post("/create-payment-intent", async (req, res) => {
+            const {price}=req.body;
+            const amount=price*100;
+          
+            // Create a PaymentIntent with the order amount and currency
+            const paymentIntent = await stripe.paymentIntents.create({
+              amount: amount,
+              currency: "usd",
+              payment_method_types:['card']
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+              });
         })
+        app.get('/details/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const newArrival = await PhonesCollections.findOne(query);
+            res.send(newArrival)
+        })
+        app.get('/newArrival', async (req, res) => {
+            const query = {}
+            const arrival = await newProductsCollection.find(query).toArray()
+            res.send(arrival)
+        })
+        app.get('/newArrival/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const newArrival = await newProductsCollection.findOne(query);
+            res.send(newArrival)
+        })
+        // app.get('/jwt', async (req, res) => {
+        //     const email = req.query.email
+        //     const query = { email: email }
+        //     const user = await AllUsersCollection.findOne(query)
+        //     if (user) {
+        //         const token = jwt.sign({ email }, process.env.SECRET_TOKEN, { expiresIn: '2h' })
+        //         return res.send({ accessToken: token })
+        //     }
+        //     res.status(403).send({ accessToken: '' })
+        // })
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body

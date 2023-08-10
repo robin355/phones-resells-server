@@ -14,22 +14,22 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@clu
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 async function run() {
     try {
-        // function verifyJwt(req, res, next) {
-        //     const authheader = req.headers.authorization;
-        //     if (!authheader) {
-        //         return res.status(401).send({ massage: 'UnAuthorization access' })
-        //     }
-        //     const token = authheader.split(' ')[1]
-        //     jwt.verify(token, process.env.SECRET_TOKEN, function (err, decoded) {
-        //         if (err) {
-        //             return res.status(401).send({ massage: 'unAuthrization' })
-        //         }
-        //         req.decoded = decoded;
-        //         next()
+        function verifyJwt(req, res, next) {
+            const authheader = req.headers.authorization;
+            if (!authheader) {
+                return res.status(401).send({ massage: 'UnAuthorization access' })
+            }
+            const token = authheader.split(' ')[1]
+            jwt.verify(token, process.env.SECRET_TOKEN, function (err, decoded) {
+                if (err) {
+                    return res.status(401).send({ massage: 'unAuthrization' })
+                }
+                req.decoded = decoded;
+                next()
 
-        //     })
+            })
 
-        // }
+        }
         const PhonesCetagoriCollections = client.db('phones').collection('cetagorie')
         const PhonesCollections = client.db('phones').collection('allphones')
         const bookingCollections = client.db('phones').collection('bookings')
@@ -94,16 +94,16 @@ async function run() {
             const newArrival = await newProductsCollection.findOne(query);
             res.send(newArrival)
         })
-        // app.get('/jwt', async (req, res) => {
-        //     const email = req.query.email
-        //     const query = { email: email }
-        //     const user = await AllUsersCollection.findOne(query)
-        //     if (user) {
-        //         const token = jwt.sign({ email }, process.env.SECRET_TOKEN, { expiresIn: '2h' })
-        //         return res.send({ accessToken: token })
-        //     }
-        //     res.status(403).send({ accessToken: '' })
-        // })
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email
+            const query = { email: email }
+            const user = await AllUsersCollection.findOne(query)
+            if (user) {
+                const token = jwt.sign({ email }, process.env.SECRET_TOKEN, { expiresIn: '2h' })
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send({ accessToken: '' })
+        })
 
         app.post('/bookings', async (req, res) => {
             const booking = req.body
@@ -221,9 +221,6 @@ async function run() {
 
 }
 run().catch(err => console.log(err))
-
-
-
 
 
 
